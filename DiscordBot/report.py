@@ -75,7 +75,7 @@ class Report:
                     reply = "Not implemented yet."
                     return [reply]
                 case _:
-                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `cancel` to cancel."
+                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `" + self.CANCEL_KEYWORD + "` to cancel."
                     self.state = State.AWAITING_REPORT_TYPE
                     return [reply]
         
@@ -84,17 +84,20 @@ class Report:
             # Parse out the three ID strings from the message link
             m = re.search('/(\d+)/(\d+)/(\d+)', message.content)
             if not m:
-                return ["I'm sorry, I couldn't read that link. Please try again or say `cancel` to cancel."]
+                reply = "I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                return [reply]
             guild = self.client.get_guild(int(m.group(1)))
             if not guild:
                 return ["I cannot accept reports of messages from guilds that I'm not in. Please have the guild owner add me to the guild and try again."]
             channel = guild.get_channel(int(m.group(2)))
             if not channel:
-                return ["It seems this channel was deleted or never existed. Please try again or say `cancel` to cancel."]
+                reply = "It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                return [reply]
             try:
                 message = await channel.fetch_message(int(m.group(3)))
             except discord.errors.NotFound:
-                return ["It seems that this message was deleted or never existed. Please try again or say `cancel` to cancel."]
+                reply = "It seems that this message was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                return [reply]
 
             # Here we've found the message.
             self.state = State.MESSAGE_IDENTIFIED
@@ -110,7 +113,8 @@ class Report:
             try:
                 user = await self.client.fetch_user(message.content)
             except discord.errors.NotFound:
-                return ["It seems that this user profile was deleted or never existed. Please try again or say `cancel` to cancel."]
+                reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                return [reply]
             
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
@@ -132,7 +136,7 @@ class Report:
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
                 reply = "Not implemented yet."
             else:
-                reply = "That was not a valid response. Please try again or say `cancel` to cancel."
+                reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
         
         # User decides whether to also block the user profile they are reporting.
@@ -145,7 +149,7 @@ class Report:
                     reply = "Ok."
                     self.state = State.REPORT_COMPLETE
                 case _:
-                    reply = "That is not a valid response. Please try again or say `cancel` to cancel."
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                     self.state = State.AWAITING_BLOCK_DECISION
             return [reply]
 
