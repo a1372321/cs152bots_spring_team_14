@@ -88,7 +88,7 @@ class Report:
                 return [reply]
             guild = self.client.get_guild(int(m.group(1)))
             if not guild:
-                return ["I cannot accept reports of messages from guilds that I'm not in. Please have the guild owner add me to the guild and try again."]
+                return ["I cannot accept reports of messages from servers that I'm not in. Please have the server owner add me to the server and try again."]
             channel = guild.get_channel(int(m.group(2)))
             if not channel:
                 reply = "It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
