@@ -40,8 +40,9 @@ class Report:
     async def handle_message(self, message):
         '''
         This function makes up the meat of the user-side reporting flow. It defines how we transition between states and what 
-        prompts to offer at each of those states. You're welcome to change anything you want; this skeleton is just here to
-        get you started and give you a model for working with Discord. 
+        prompts to offer at each of those states.
+        :param message: The user's message to the bot
+        :return: bot reply to the user
         '''
 
         # User cancels report.
@@ -81,18 +82,25 @@ class Report:
         
         # User is reporting a message.
         if self.state == State.AWAITING_MESSAGE:
-            # Parse out the three ID strings from the message link
+            
+            # Verify 1: Parse out the three ID strings from the message link and verify if valid discord link
             m = re.search('^(?:https:\/\/discord.com\/channels)\/(\d+)\/(\d+)\/(\d+)', message.content)
             if not m:
                 reply = "I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                 return [reply]
+            
+            # Verify 2: Check if the bot is added to the guild (discord server)
             guild = self.client.get_guild(int(m.group(1)))
             if not guild:
                 return ["I cannot accept reports of messages from servers that I'm not in. Please have the server owner add me to the server and try again."]
+            
+            # Verify 3: Check if the channel the message was in exists
             channel = guild.get_channel(int(m.group(2)))
             if not channel:
                 reply = "It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                 return [reply]
+            
+            # Verify 4: Check if the message itself exists
             try:
                 message = await channel.fetch_message(int(m.group(3)))
             except discord.errors.NotFound:
