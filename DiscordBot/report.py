@@ -82,7 +82,7 @@ class Report:
         # User is reporting a message.
         if self.state == State.AWAITING_MESSAGE:
             # Parse out the three ID strings from the message link
-            m = re.search('/(\d+)/(\d+)/(\d+)', message.content)
+            m = re.search('^(?:https:\/\/discord.com\/channels)\/(\d+)\/(\d+)\/(\d+)', message.content)
             if not m:
                 reply = "I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                 return [reply]
