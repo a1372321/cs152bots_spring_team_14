@@ -52,7 +52,7 @@ class Report:
         # User starts reporting process.
         if self.state == State.REPORT_START:
             reply =  "Thank you for starting the reporting process. "
-            reply += "Say `help` at any time for more information.\n\n"
+            reply += "Say `" + self.HELP_KEYWORD + "` at any time for more information.\n\n"
             reply += "Are you reporting a message, a user, or a conversation?\n"
             reply += "You can say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`."
             self.state = State.AWAITING_REPORT_TYPE
@@ -75,7 +75,7 @@ class Report:
                     reply = "Not implemented yet."
                     return [reply]
                 case _:
-                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `cancel` to cancel."
+                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `" + self.CANCEL_KEYWORD + "` to cancel."
                     self.state = State.AWAITING_REPORT_TYPE
                     return [reply]
         
@@ -84,22 +84,22 @@ class Report:
             # Parse out the three ID strings from the message link
             m = re.search('/(\d+)/(\d+)/(\d+)', message.content)
             if not m:
-                return ["I'm sorry, I couldn't read that link. Please try again or say `cancel` to cancel."]
+                return ["I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             guild = self.client.get_guild(int(m.group(1)))
             if not guild:
                 return ["I cannot accept reports of messages from guilds that I'm not in. Please have the guild owner add me to the guild and try again."]
             channel = guild.get_channel(int(m.group(2)))
             if not channel:
-                return ["It seems this channel was deleted or never existed. Please try again or say `cancel` to cancel."]
+                return ["It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             try:
                 message = await channel.fetch_message(int(m.group(3)))
             except discord.errors.NotFound:
-                return ["It seems that this message was deleted or never existed. Please try again or say `cancel` to cancel."]
+                return ["It seems that this message was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
 
             # Here we've found the message.
             self.state = State.MESSAGE_IDENTIFIED
             reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
-            reply += "What are you reporting this message for? Enter the number for the type of abuse from the list below. \n\n"
+            reply += "What are you reporting this message for? Enter the number for the type of abuse from the list below. \n"
             for key, value in self.ABUSE_TYPES_DICT.items():
                 reply += "\n" + key + ". " + value
             self.state = State.AWAITING_ABUSE_TYPE
@@ -110,7 +110,7 @@ class Report:
             try:
                 user = await self.client.fetch_user(message.content)
             except discord.errors.NotFound:
-                return ["It seems that this user profile was deleted or never existed. Please try again or say `cancel` to cancel."]
+                return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
@@ -124,7 +124,7 @@ class Report:
         if self.state == State.AWAITING_ABUSE_TYPE:
             # Other abuse type. Shallow implementation.
             if message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] != "impersonation":
-                reply = "Thank you for your report with the listed reason of `" + self.ABUSE_TYPES_DICT[message.content]+ "`.\n\n"
+                reply = "Thank you for your report with the listed reason of `" + self.ABUSE_TYPES_DICT[message.content] + "`.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                 reply += "Would you also like to block this user? Enter `yes` or `no`."
                 self.state = State.AWAITING_BLOCK_DECISION
@@ -132,20 +132,20 @@ class Report:
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
                 reply = "Not implemented yet."
             else:
-                reply = "That was not a valid response. Please try again or say `cancel` to cancel."
+                reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
         
         # User decides whether to also block the user profile they are reporting.
         if self.state == State. AWAITING_BLOCK_DECISION:
             match message.content.lower():
                 case "yes":
-                    reply = "Not implemented yet."
+                    reply = "Ok. You will no longer see content or messages from this user."
                     self.state = State.REPORT_COMPLETE
                 case "no":
                     reply = "Ok."
                     self.state = State.REPORT_COMPLETE
                 case _:
-                    reply = "That is not a valid response. Please try again or say `cancel` to cancel."
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                     self.state = State.AWAITING_BLOCK_DECISION
             return [reply]
 
