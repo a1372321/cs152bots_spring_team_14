@@ -10,6 +10,11 @@ class State(Enum):
     MESSAGE_IDENTIFIED = auto()
     USER_IDENTIFIED = auto()
     AWAITING_ABUSE_TYPE = auto()
+    AWAITING_IMPERSONATION_VICTIM = auto()
+    AWAITING_HAS_INSTAGRAM_PROFILE = auto()
+    AWAITING_IMPERSONATING_REAL_PERSON = auto()
+    AWAITING_REAL_INSTAGRAM_PROFILE = auto()
+    AWAITING_REAL_INSTAGRAM_PROFILE_CONFIRM = auto()
     AWAITING_BLOCK_DECISION = auto()
     REPORT_COMPLETE = auto()
 
@@ -30,6 +35,11 @@ class Report:
         "7": "misleading content or scams",
         "8": "threatening or blackmailing",
         "9": "impersonation"
+    }
+    IMPERSONATION_VICTIM_DICT = {
+        "1": "me",
+        "2": "someone I know",
+        "3": "someone else"
     }
 
     def __init__(self, client):
@@ -130,9 +140,133 @@ class Report:
                 self.state = State.AWAITING_BLOCK_DECISION
             # Impersonation
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
-                reply = "Not implemented yet."
+                reply = "Who is this profile impersonating? Enter the number for the corresponding identity from the list below.\n"
+                for key, value in self.IMPERSONATION_VICTIM_DICT.items():
+                    reply += "\n" + key + ". " + value
+                self.state = State.AWAITING_IMPERSONATION_VICTIM
             else:
                 reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # User specifies who is being impersonated.
+        if self.state == State.AWAITING_IMPERSONATION_VICTIM:
+            # The reporter is being impersonated.
+            if message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys() and self.IMPERSONATION_VICTIM_DICT[message.content] == "me":
+                reply = "Thank you for your report.\n\n"
+                reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                reply += "Would you also like to block this user? Enter `yes` or `no`."
+                self.state = State.AWAITING_BLOCK_DECISION
+            # Someone who is not the reporter is being impersonated.
+            elif message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys():
+                reply = "Does the person being impersonated have a profile on this platform? You can say `yes`, `no`, or `I don't know`."
+                self.state = State.AWAITING_HAS_INSTAGRAM_PROFILE
+            else:
+                reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # User tells us if the impersonation victim has a profile on this platform.
+        if self.state == State.AWAITING_HAS_INSTAGRAM_PROFILE:
+            match message.content.lower():
+                case "yes":
+                    reply = "What is the real user ID of the person being impersonated?\n"
+                    reply += "You can obtain this ID by turning on Developer Mode, right-clicking the user's name or profile picture, and clicking `Copy User ID`.\n\n"
+                    reply += "Enter the user ID of the person being impersonated or say `I don't know`."
+                    self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE
+                case "no":
+                    # # If in the "impersonating someone I know" branch:
+                    # reply = "Thank you for your report.\n\n"
+                    # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    # reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    # self.state = State.AWAITING_BLOCK_DECISION
+                    reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                    self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
+                    return [reply]
+                case "i don't know":
+                    # # If in the "impersonating someone I know" branch:
+                    # reply = "Thank you for your report.\n\n"
+                    # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    # reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    # self.state = State.AWAITING_BLOCK_DECISION
+                    reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                    self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
+                    return [reply]
+                case "i dont know":
+                    # # If in the "impersonating someone I know" branch:
+                    # reply = "Thank you for your report.\n\n"
+                    # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    # reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    # self.state = State.AWAITING_BLOCK_DECISION
+                    reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                    self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
+                    return [reply]
+                case _:
+                    reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # User tells us the real user ID of the impersonation victim.
+        if self.state == State.AWAITING_REAL_INSTAGRAM_PROFILE:
+            # User doesn't have real ID of impersonation victim. End reporting flow.
+            if message.content.lower() == "i don't know" or message.content.lower() == "i dont know":
+                reply = "Thank you for your report.\n\n"
+                reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                reply += "Would you also like to block this user? Enter `yes` or `no`."
+                self.state = State.AWAITING_BLOCK_DECISION
+                return [reply]
+            # User (presumably) attempts to enter a user ID.
+            try:
+                user = await self.client.fetch_user(message.content)
+            except discord.errors.NotFound:
+                reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
+                self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE
+                return [reply]
+            # Here we've found the user.
+            self.state = State.USER_IDENTIFIED
+            reply = "Thank you. We've identified " + user.name + " from the user ID you've provided. Is this the username of the person being impersonated?\n"
+            reply += "Say `yes` or `no`."
+            self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE_CONFIRM
+            return [reply]
+        
+        # User confirms that the impersonation victim's profile we've retrieved is the correct one.
+        if self.state == State.AWAITING_REAL_INSTAGRAM_PROFILE_CONFIRM:
+            match message.content.lower():
+                case "yes":
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                case "no":
+                    reply = "It seems that you've entered the wrong user ID. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
+                    self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE
+                case _:
+                    reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # User tells us if the impersonation victim is a real person (as opposed to AI-generated or otherwise fictional persona).
+        if self.state == State.AWAITING_IMPERSONATING_REAL_PERSON:
+            # All of these are handled the same way. Only difference is in how it's recorded for the report the moderation team receives.
+            match message.content.lower():
+                case "yes":
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                case "no":
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                case "i don't know":
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                case "i dont know":
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    reply += "Would you also like to block this user? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                case _:
+                    reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
         
         # User decides whether to also block the user profile they are reporting.
