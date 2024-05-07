@@ -40,9 +40,8 @@ class Report:
     async def handle_message(self, message):
         '''
         This function makes up the meat of the user-side reporting flow. It defines how we transition between states and what 
-        prompts to offer at each of those states.
-        :param message: The user's message to the bot
-        :return: bot reply to the user
+        prompts to offer at each of those states. You're welcome to change anything you want; this skeleton is just here to
+        get you started and give you a model for working with Discord. 
         '''
 
         # User cancels report.
@@ -76,36 +75,26 @@ class Report:
                     reply = "Not implemented yet."
                     return [reply]
                 case _:
-                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                    reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "`, `" + self.USER_KEYWORD + "`, or `" + self.CONVERSATION_KEYWORD + "`, or say `cancel` to cancel."
                     self.state = State.AWAITING_REPORT_TYPE
                     return [reply]
         
         # User is reporting a message.
         if self.state == State.AWAITING_MESSAGE:
-            
-            # Verify 1: Parse out the three ID strings from the message link and verify if valid discord link
-            m = re.search(r'^(?:https://discord.com/channels)/(\d+)/(\d+)/(\d+)$', message.content)
+            # Parse out the three ID strings from the message link
+            m = re.search('/(\d+)/(\d+)/(\d+)', message.content)
             if not m:
-                reply = "I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                return [reply]
-            
-            # Verify 2: Check if the bot is added to the guild (discord server)
+                return ["I'm sorry, I couldn't read that link. Please try again or say `cancel` to cancel."]
             guild = self.client.get_guild(int(m.group(1)))
             if not guild:
-                return ["I cannot accept reports of messages from servers that I'm not in. Please have the server owner add me to the server and try again."]
-            
-            # Verify 3: Check if the channel the message was in exists
+                return ["I cannot accept reports of messages from guilds that I'm not in. Please have the guild owner add me to the guild and try again."]
             channel = guild.get_channel(int(m.group(2)))
             if not channel:
-                reply = "It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                return [reply]
-            
-            # Verify 4: Check if the message itself exists
+                return ["It seems this channel was deleted or never existed. Please try again or say `cancel` to cancel."]
             try:
                 message = await channel.fetch_message(int(m.group(3)))
             except discord.errors.NotFound:
-                reply = "It seems that this message was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                return [reply]
+                return ["It seems that this message was deleted or never existed. Please try again or say `cancel` to cancel."]
 
             # Here we've found the message.
             self.state = State.MESSAGE_IDENTIFIED
@@ -121,8 +110,7 @@ class Report:
             try:
                 user = await self.client.fetch_user(message.content)
             except discord.errors.NotFound:
-                reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                return [reply]
+                return ["It seems that this user profile was deleted or never existed. Please try again or say `cancel` to cancel."]
             
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
@@ -144,7 +132,7 @@ class Report:
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
                 reply = "Not implemented yet."
             else:
-                reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                reply = "That was not a valid response. Please try again or say `cancel` to cancel."
             return [reply]
         
         # User decides whether to also block the user profile they are reporting.
@@ -157,7 +145,7 @@ class Report:
                     reply = "Ok."
                     self.state = State.REPORT_COMPLETE
                 case _:
-                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                    reply = "That is not a valid response. Please try again or say `cancel` to cancel."
                     self.state = State.AWAITING_BLOCK_DECISION
             return [reply]
 
