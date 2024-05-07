@@ -84,7 +84,7 @@ class Report:
         if self.state == State.AWAITING_MESSAGE:
             
             # Verify 1: Parse out the three ID strings from the message link and verify if valid discord link
-            m = re.search('^(?:https:\/\/discord.com\/channels)\/(\d+)\/(\d+)\/(\d+)', message.content)
+            m = re.search(r'^(?:https://discord.com/channels)/(\d+)/(\d+)/(\d+)$', message.content)
             if not m:
                 reply = "I'm sorry, I couldn't read that link. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
                 return [reply]
