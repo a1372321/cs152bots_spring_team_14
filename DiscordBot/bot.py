@@ -89,13 +89,23 @@ class ModBot(discord.Client):
         if author_id not in self.reports:
             self.reports[author_id] = Report(self)
 
-        # Let the report class handle this message; forward all the messages it returns to uss
+        # Let the report class handle this message; forward all the messages it returns to us
         responses = await self.reports[author_id].handle_message(message)
         for r in responses:
             await message.channel.send(r)
 
-        # If the report is complete or cancelled, remove it from our map
+        # If the report is complete or cancelled, forward it to the mod channel and remove it from our map
         if self.reports[author_id].report_complete():
+            # Forward the report to the mod channel
+            for guild in self.guilds:
+                for channel in guild.text_channels:
+                    if channel.name == f'group-{self.group_num}-mod':
+                        mod_channel = self.mod_channels[guild.id]
+            report_contents_formatted = "User report from " + message.author.name + ":\n"
+            for key, value in self.reports[author_id].REPORT_INFO_DICT.items():
+                report_contents_formatted += "\n" + key + ": " + str(value)
+            await mod_channel.send(report_contents_formatted)
+            # Remove the report from our map
             self.reports.pop(author_id)
 
     async def handle_channel_message(self, message):

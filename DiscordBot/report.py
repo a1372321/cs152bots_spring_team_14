@@ -41,6 +41,7 @@ class Report:
         "2": "someone I know",
         "3": "someone else"
     }
+    REPORT_INFO_DICT = {}
 
     def __init__(self, client):
         self.state = State.REPORT_START
@@ -72,11 +73,13 @@ class Report:
         if self.state == State.AWAITING_REPORT_TYPE:
             match message.content.lower():
                 case self.MESSAGE_KEYWORD:
+                    self.REPORT_INFO_DICT["Reporting"] = self.MESSAGE_KEYWORD
                     reply = "Please copy and paste the link to the message you want to report.\n"
                     reply += "You can obtain this link by right-clicking the message and clicking `Copy Message Link`."
                     self.state = State.AWAITING_MESSAGE
                     return [reply]
                 case self.USER_KEYWORD:
+                    self.REPORT_INFO_DICT["Reporting"] = self.USER_KEYWORD
                     reply = "Please copy and paste the ID of the user profile you wish to report.\n"
                     reply += "You can obtain this ID by turning on Developer Mode, right-clicking the user's name or profile picture, and clicking `Copy User ID`."
                     self.state = State.AWAITING_USER
@@ -102,13 +105,16 @@ class Report:
             if not channel:
                 return ["It seems this channel was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             try:
-                message = await channel.fetch_message(int(m.group(3)))
+                offending_message = await channel.fetch_message(int(m.group(3)))
             except discord.errors.NotFound:
                 return ["It seems that this message was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
 
             # Here we've found the message.
             self.state = State.MESSAGE_IDENTIFIED
-            reply = "I found this message:" + "```" + message.author.name + ": " + message.content + "```\n"
+            self.REPORT_INFO_DICT["Offending message link"] = message.content
+            self.REPORT_INFO_DICT["Offending message author"] = offending_message.author.name
+            self.REPORT_INFO_DICT["Offending message"] = offending_message.content
+            reply = "I found this message:" + "```" + offending_message.author.name + ": " + offending_message.content + "```\n"
             reply += "What are you reporting this message for? Enter the number for the type of abuse from the list below. \n"
             for key, value in self.ABUSE_TYPES_DICT.items():
                 reply += "\n" + key + ". " + value
@@ -124,7 +130,8 @@ class Report:
             
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
-            reply = "What are you reporting " + user.name + " for? Enter the number for the type of abuse from the list below.\n"
+            self.REPORT_INFO_DICT["Offending user ID"] = user.id
+            reply = "What are you reporting `" + user.name + "` for? Enter the number for the type of abuse from the list below.\n"
             for key, value in self.ABUSE_TYPES_DICT.items():
                 reply += "\n" + key + ". " + value
             self.state = State.AWAITING_ABUSE_TYPE
@@ -134,12 +141,14 @@ class Report:
         if self.state == State.AWAITING_ABUSE_TYPE:
             # Other abuse type. Shallow implementation.
             if message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] != "impersonation":
+                self.REPORT_INFO_DICT["Abuse type"] = self.ABUSE_TYPES_DICT[message.content]
                 reply = "Thank you for your report with the listed reason of `" + self.ABUSE_TYPES_DICT[message.content] + "`.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                 reply += "Would you also like to block this user? Enter `yes` or `no`."
                 self.state = State.AWAITING_BLOCK_DECISION
             # Impersonation
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
+                self.REPORT_INFO_DICT["Abuse type"] = self.ABUSE_TYPES_DICT[message.content]
                 reply = "Who is this profile impersonating? Enter the number for the corresponding identity from the list below.\n"
                 for key, value in self.IMPERSONATION_VICTIM_DICT.items():
                     reply += "\n" + key + ". " + value
@@ -152,12 +161,14 @@ class Report:
         if self.state == State.AWAITING_IMPERSONATION_VICTIM:
             # The reporter is being impersonated.
             if message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys() and self.IMPERSONATION_VICTIM_DICT[message.content] == "me":
+                self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
                 reply = "Thank you for your report.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                 reply += "Would you also like to block this user? Enter `yes` or `no`."
                 self.state = State.AWAITING_BLOCK_DECISION
             # Someone who is not the reporter is being impersonated.
             elif message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys():
+                self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
                 reply = "Does the person being impersonated have a profile on this platform? You can say `yes`, `no`, or `I don't know`."
                 self.state = State.AWAITING_HAS_INSTAGRAM_PROFILE
             else:
@@ -168,6 +179,7 @@ class Report:
         if self.state == State.AWAITING_HAS_INSTAGRAM_PROFILE:
             match message.content.lower():
                 case "yes":
+                    self.REPORT_INFO_DICT["Victim has profile"] = message.content.lower()
                     reply = "What is the real user ID of the person being impersonated?\n"
                     reply += "You can obtain this ID by turning on Developer Mode, right-clicking the user's name or profile picture, and clicking `Copy User ID`.\n\n"
                     reply += "Enter the user ID of the person being impersonated or say `I don't know`."
@@ -178,6 +190,7 @@ class Report:
                     # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     # reply += "Would you also like to block this user? Enter `yes` or `no`."
                     # self.state = State.AWAITING_BLOCK_DECISION
+                    self.REPORT_INFO_DICT["Victim has profile"] = message.content.lower()
                     reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
                     self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
@@ -187,6 +200,7 @@ class Report:
                     # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     # reply += "Would you also like to block this user? Enter `yes` or `no`."
                     # self.state = State.AWAITING_BLOCK_DECISION
+                    self.REPORT_INFO_DICT["Victim has profile"] = "unsure"
                     reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
                     self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
@@ -196,6 +210,7 @@ class Report:
                     # reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     # reply += "Would you also like to block this user? Enter `yes` or `no`."
                     # self.state = State.AWAITING_BLOCK_DECISION
+                    self.REPORT_INFO_DICT["Victim has profile"] = "unsure"
                     reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
                     self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
@@ -207,6 +222,7 @@ class Report:
         if self.state == State.AWAITING_REAL_INSTAGRAM_PROFILE:
             # User doesn't have real ID of impersonation victim. End reporting flow.
             if message.content.lower() == "i don't know" or message.content.lower() == "i dont know":
+                self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
                 reply = "Thank you for your report.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                 reply += "Would you also like to block this user? Enter `yes` or `no`."
@@ -217,11 +233,11 @@ class Report:
                 user = await self.client.fetch_user(message.content)
             except discord.errors.NotFound:
                 reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
-                self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE
                 return [reply]
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
-            reply = "Thank you. We've identified " + user.name + " from the user ID you've provided. Is this the username of the person being impersonated?\n"
+            self.REPORT_INFO_DICT["Victim user ID"] = message.content
+            reply = "Thank you. We've identified `" + user.name + "` from the user ID you've provided. Is this the username of the person being impersonated?\n"
             reply += "Say `yes` or `no`."
             self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE_CONFIRM
             return [reply]
@@ -235,6 +251,7 @@ class Report:
                     reply += "Would you also like to block this user? Enter `yes` or `no`."
                     self.state = State.AWAITING_BLOCK_DECISION
                 case "no":
+                    self.REPORT_INFO_DICT.pop(list(self.REPORT_INFO_DICT)[-1])
                     reply = "It seems that you've entered the wrong user ID. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
                     self.state = State.AWAITING_REAL_INSTAGRAM_PROFILE
                 case _:
@@ -246,21 +263,25 @@ class Report:
             # All of these are handled the same way. Only difference is in how it's recorded for the report the moderation team receives.
             match message.content.lower():
                 case "yes":
+                    self.REPORT_INFO_DICT["Victim is a real person"] = message.content.lower()
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     reply += "Would you also like to block this user? Enter `yes` or `no`."
                     self.state = State.AWAITING_BLOCK_DECISION
                 case "no":
+                    self.REPORT_INFO_DICT["Victim is a real person"] = message.content.lower()
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     reply += "Would you also like to block this user? Enter `yes` or `no`."
                     self.state = State.AWAITING_BLOCK_DECISION
                 case "i don't know":
+                    self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     reply += "Would you also like to block this user? Enter `yes` or `no`."
                     self.state = State.AWAITING_BLOCK_DECISION
                 case "i dont know":
+                    self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
                     reply += "Would you also like to block this user? Enter `yes` or `no`."
