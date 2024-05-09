@@ -80,8 +80,8 @@ class Report:
                     return [reply]
                 case self.USER_KEYWORD:
                     self.REPORT_INFO_DICT["Reporting"] = self.USER_KEYWORD
-                    reply = "Please copy and paste the ID of the user profile you wish to report.\n"
-                    reply += "You can obtain this ID by turning on Developer Mode, right-clicking the user's name or profile picture, and clicking `Copy User ID`."
+                    reply = "Please copy and paste the username of the user profile you wish to report.\n"
+                    reply += "You can obtain this by clicking on the profile picture and copying the username written below the Display Name."
                     self.state = State.AWAITING_USER
                     return [reply]
                 case _:
@@ -122,7 +122,8 @@ class Report:
         # User is reporting a user profile.
         if self.state == State.AWAITING_USER:
             try:
-                user = await self.client.fetch_user(message.content)
+                memberID = await get_member_id(self.client, message.content)
+                user = await self.client.fetch_user(memberID)
             except discord.errors.NotFound:
                 return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             
@@ -179,9 +180,9 @@ class Report:
             match message.content.lower():
                 case "yes":
                     self.REPORT_INFO_DICT["Victim has profile"] = message.content.lower()
-                    reply = "What is the real user ID of the person being impersonated?\n"
-                    reply += "You can obtain this ID by turning on Developer Mode, right-clicking the user's name or profile picture, and clicking `Copy User ID`.\n\n"
-                    reply += "Enter the user ID of the person being impersonated or say `I don't know`."
+                    reply = "What is the real username of the person being impersonated?\n"
+                    reply += "You can obtain this by clicking on the profile picture and copying the username written below the Display Name.\n\n"
+                    reply += "Enter the username of the person being impersonated or say `I don't know`."
                     self.state = State.AWAITING_REAL_PROFILE
                 case "no":
                     self.REPORT_INFO_DICT["Victim has profile"] = message.content.lower()
@@ -226,9 +227,9 @@ class Report:
                     reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
         
-        # User tells us the real user ID of the impersonation victim.
+        # User tells us the real username of the impersonation victim.
         if self.state == State.AWAITING_REAL_PROFILE:
-            # User doesn't have real ID of impersonation victim. End reporting flow.
+            # User doesn't have real username of impersonation victim. End reporting flow.
             if message.content.lower() == "i don't know" or message.content.lower() == "i dont know":
                 self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
                 reply = "Thank you for your report.\n\n"
@@ -236,16 +237,17 @@ class Report:
                 reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
                 self.state = State.AWAITING_BLOCK_DECISION
                 return [reply]
-            # User (presumably) attempts to enter a user ID.
+            # User (presumably) attempts to enter a username.
             try:
-                user = await self.client.fetch_user(message.content)
+                memberID = await get_member_id(self.client, message.content)
+                user = await self.client.fetch_user(memberID)
             except discord.errors.NotFound:
-                reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
+                reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the username of the person being impersonated, say `I don't know`."
                 return [reply]
             # Here we've found the user.
             self.state = State.USER_IDENTIFIED
             self.REPORT_INFO_DICT["Victim user ID"] = message.content
-            reply = "Thank you. We've identified `" + user.name + "` from the user ID you've provided. Is this the username of the person being impersonated?\n"
+            reply = "Thank you. We've identified `" + user.name + "` from the username you've provided. Is this the username of the person being impersonated?\n"
             reply += "Say `yes` or `no`."
             self.state = State.AWAITING_REAL_PROFILE_CONFIRM
             return [reply]
@@ -260,7 +262,7 @@ class Report:
                     self.state = State.AWAITING_BLOCK_DECISION
                 case "no":
                     self.REPORT_INFO_DICT.pop(list(self.REPORT_INFO_DICT)[-1])
-                    reply = "It seems that you've entered the wrong user ID. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the user ID of the person being impersonated, say `I don't know`."
+                    reply = "It seems that you've entered the wrong username. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the username of the person being impersonated, say `I don't know`."
                     self.state = State.AWAITING_REAL_PROFILE
                 case _:
                     reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
@@ -319,8 +321,20 @@ class Report:
     
     def report_cancelled(self):
         return self.state == State.REPORT_CANCELLED
-    
 
+
+async def get_member_id(self, provided):
+    """
+    This function gets the unique member ID from a provided
+    Discord Username for reporting purposes.
+    :param self: The user reporting flow
+    :param provided: The user provided username (to be reported)
+    :return: member ID associated with the username
+    """
+    for guild in self.guilds:
+        async for member in guild.fetch_members():
+            if provided == member.name:
+                return member.id
 
     
 
