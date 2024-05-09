@@ -17,6 +17,7 @@ class State(Enum):
     AWAITING_REAL_INSTAGRAM_PROFILE_CONFIRM = auto()
     AWAITING_BLOCK_DECISION = auto()
     REPORT_COMPLETE = auto()
+    REPORT_CANCELLED = auto()
 
 class Report:
     START_KEYWORD = "report"
@@ -57,7 +58,7 @@ class Report:
 
         # User cancels report.
         if message.content == self.CANCEL_KEYWORD:
-            self.state = State.REPORT_COMPLETE
+            self.state = State.REPORT_CANCELLED
             return ["Report cancelled."]
         
         # User starts reporting process.
@@ -308,6 +309,9 @@ class Report:
 
     def report_complete(self):
         return self.state == State.REPORT_COMPLETE
+    
+    def report_cancelled(self):
+        return self.state == State.REPORT_CANCELLED
     
 
 

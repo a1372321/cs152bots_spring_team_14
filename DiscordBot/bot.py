@@ -94,7 +94,7 @@ class ModBot(discord.Client):
         for r in responses:
             await message.channel.send(r)
 
-        # If the report is complete or cancelled, forward it to the mod channel and remove it from our map
+        # If the report is complete, forward it to the mod channel and remove it from our map
         if self.reports[author_id].report_complete():
             # Forward the report to the mod channel
             for guild in self.guilds:
@@ -106,6 +106,10 @@ class ModBot(discord.Client):
                 report_contents_formatted += "\n" + key + ": " + str(value)
             await mod_channel.send(report_contents_formatted)
             # Remove the report from our map
+            self.reports.pop(author_id)
+        
+        # If the report is cancelled, remove it from our map
+        if self.reports[author_id].report_cancelled():
             self.reports.pop(author_id)
 
     async def handle_channel_message(self, message):
