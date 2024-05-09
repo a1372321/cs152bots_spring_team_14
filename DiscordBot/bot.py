@@ -107,6 +107,7 @@ class ModBot(discord.Client):
             await mod_channel.send(report_contents_formatted)
             # Remove the report from our map
             self.reports.pop(author_id)
+            return
         
         # If the report is cancelled, remove it from our map
         if self.reports[author_id].report_cancelled():
