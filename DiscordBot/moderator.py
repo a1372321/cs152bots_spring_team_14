@@ -1,6 +1,7 @@
 # moderator.py
 from enum import Enum, auto
 import discord
+from discord import User
 import re
 
 class State(Enum):
@@ -21,6 +22,7 @@ class Moderate:
     def __init__(self, client):
         self.state = State.MODERATION_START
         self.client = client
+        self.offender = None
         self.message = None
         self.report = {}
         self.watch = ""
@@ -49,6 +51,9 @@ class Moderate:
             reply += "This is the next report in the moderation queue:\n"
             for key, value in self.report.items():
                 reply += "\n" + key + ": " + str(value)
+
+            # set the offender's user
+            self.offender = await self.client.fetch_user(self.report["Offending user ID"])
 
             # Other abuse type. Shallow implementation.
             if self.report["Abuse type"] != "impersonation":
@@ -119,6 +124,9 @@ class Moderate:
                     self.state = State.AWAITING_MALICIOUS_DECISION
                 case "no":
                     reply = "A warning has been issued to the reporter about false or malicious reports. They may appeal if they believe there has been a mistake. No further action is necessary."
+                    await self.send_offender_dm("""
+                                                You have been issued a warning for impersonation.
+                                                You can appeal this decision by contacting the moderators at moderators@service.com""")
                     self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
@@ -170,9 +178,11 @@ class Moderate:
             match message.content.lower():
                 case "yes":
                     reply = "A warning and permanent ban have been issued to the offender with the reason of `impersonation`. They may appeal if they believe there has been a mistake. No further action is necessary."
+                    await self.send_offender_dm("You have been permanently banned from our service for impersonation. You can appeal this decision by contacting the moderators at moderators@service.com")
                     self.state = State.MODERATION_COMPLETE
                 case "no":
                     reply = "A warning and 7-day ban have been issued to the offender with the reason of `impersonation`. They may appeal if they believe there has been a mistake. No further action is necessary."
+                    await self.send_offender_dm("You have been placed 7-day ban impersonation. You can appeal this decision by contacting the moderators at moderators@service.com")
                     self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
@@ -183,6 +193,13 @@ class Moderate:
 
     def moderation_cancelled(self):
         return self.state == State.MODERATION_CANCELLED
+    
+    async def send_offender_dm(self, message):
+        try:
+            dm_channel = await self.offender.create_dm()
+            await dm_channel.send(message)
+        except discord.HTTPException as e:
+            print(f"Failed to send DM to offender: {e}")
 
 async def get_member_id(self, provided):
     """
