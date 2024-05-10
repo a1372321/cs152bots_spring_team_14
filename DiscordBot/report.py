@@ -3,6 +3,9 @@ import discord
 import re
 
 class State(Enum):
+    BLOCK_START = auto()
+    AWAITING_USER_TO_BLOCK = auto()
+    AWAITING_REPORT_DECISION = auto()
     REPORT_START = auto()
     AWAITING_REPORT_TYPE = auto()
     AWAITING_MESSAGE = auto()
@@ -20,9 +23,10 @@ class State(Enum):
     REPORT_CANCELLED = auto()
 
 class Report:
-    START_KEYWORD = "report"
-    CANCEL_KEYWORD = "cancel"
-    HELP_KEYWORD = "help"
+    START_KEYWORD = "!report"
+    CANCEL_KEYWORD = "!cancel"
+    HELP_KEYWORD = "!help"
+    BLOCK_KEYWORD = "!block"
     MESSAGE_KEYWORD = "message"
     USER_KEYWORD = "user"
     ABUSE_TYPES_DICT = {
@@ -60,6 +64,48 @@ class Report:
             self.state = State.REPORT_CANCELLED
             return ["Report cancelled."]
         
+        # User starts by blocking process.
+        if self.state == State.BLOCK_START:
+            reply = "Please copy and paste the username of the user profile you wish to block.\n\n"
+            reply += "You can obtain this by clicking the user's Display Name or profile picture and copying the username that appears below their Display Name in the resulting popup."
+            self.state = State.AWAITING_USER_TO_BLOCK
+            return [reply]
+        
+        # User blocks a user profile.
+        if self.state == State.AWAITING_USER_TO_BLOCK:
+            try:
+                memberID = await get_member_id(self.client, message.content)
+                user = await self.client.fetch_user(memberID)
+            except discord.errors.NotFound:
+                return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
+            
+            # Here we've found the user.
+            self.state = State.USER_IDENTIFIED
+            self.REPORT_INFO_DICT["Reporting"] = self.USER_KEYWORD
+            self.REPORT_INFO_DICT["Offending user ID"] = user.id
+            self.REPORT_INFO_DICT["Offending username"] = user.name
+            reply = "Ok. You will no longer see content or messages from `" + self.REPORT_INFO_DICT["Offending username"] + "`.\n"
+            reply += "Would you also like to report `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+            self.state = State.AWAITING_REPORT_DECISION
+            return [reply]
+        
+        # User decides whether to also report the user profile they are blocking.
+        if self.state == State.AWAITING_REPORT_DECISION:
+            match message.content.lower():
+                case "yes":
+                    self.REPORT_INFO_DICT["Offending user blocked"] = "yes"
+                    reply = "Thank you for starting the reporting process. What are you reporting `" + self.REPORT_INFO_DICT["Offending username"] + "` for? Enter the number for the type of abuse from the list below.\n"
+                    for key, value in self.ABUSE_TYPES_DICT.items():
+                        reply += "\n" + key + ". " + value
+                    self.state = State.AWAITING_ABUSE_TYPE
+                case "no":
+                    reply = "Ok."
+                    self.state = State.REPORT_CANCELLED
+                case _:
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                    self.state = State.AWAITING_REPORT_DECISION
+            return [reply]
+        
         # User starts reporting process.
         if self.state == State.REPORT_START:
             reply =  "Thank you for starting the reporting process. "
@@ -81,7 +127,7 @@ class Report:
                 case self.USER_KEYWORD:
                     self.REPORT_INFO_DICT["Reporting"] = self.USER_KEYWORD
                     reply = "Please copy and paste the username of the user profile you wish to report.\n"
-                    reply += "You can obtain this by clicking on the profile picture and copying the username written below the Display Name."
+                    reply += "You can obtain this by clicking the user's Display Name or profile picture and copying the username that appears below their Display Name in the resulting popup."
                     self.state = State.AWAITING_USER
                     return [reply]
                 case _:
@@ -144,8 +190,11 @@ class Report:
                 self.REPORT_INFO_DICT["Abuse type"] = self.ABUSE_TYPES_DICT[message.content]
                 reply = "Thank you for your report with the listed reason of `" + self.ABUSE_TYPES_DICT[message.content] + "`.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                self.state = State.AWAITING_BLOCK_DECISION
+                if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                else:
+                    self.state = State.REPORT_COMPLETE
             # Impersonation
             elif message.content.lower() in self.ABUSE_TYPES_DICT.keys() and self.ABUSE_TYPES_DICT[message.content] == "impersonation":
                 self.REPORT_INFO_DICT["Abuse type"] = self.ABUSE_TYPES_DICT[message.content]
@@ -164,8 +213,11 @@ class Report:
                 self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
                 reply = "Thank you for your report.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                self.state = State.AWAITING_BLOCK_DECISION
+                if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                else:
+                    self.state = State.REPORT_COMPLETE
             # Someone who is not the reporter is being impersonated.
             elif message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys():
                 self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
@@ -181,7 +233,7 @@ class Report:
                 case "yes":
                     self.REPORT_INFO_DICT["Victim has profile"] = message.content.lower()
                     reply = "What is the real username of the person being impersonated?\n"
-                    reply += "You can obtain this by clicking on the profile picture and copying the username written below the Display Name.\n\n"
+                    reply += "You can obtain this by clicking the user's Display Name or profile picture and copying the username that appears below their Display Name in the resulting popup.\n\n"
                     reply += "Enter the username of the person being impersonated or say `I don't know`."
                     self.state = State.AWAITING_REAL_PROFILE
                 case "no":
@@ -190,8 +242,11 @@ class Report:
                     if self.REPORT_INFO_DICT["Impersonation victim"] == self.IMPERSONATION_VICTIM_DICT["2"]:
                         reply = "Thank you for your report.\n\n"
                         reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                        self.state = State.AWAITING_BLOCK_DECISION
+                        if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                            reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                            self.state = State.AWAITING_BLOCK_DECISION
+                        else:
+                            self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
                         reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
@@ -203,8 +258,11 @@ class Report:
                     if self.REPORT_INFO_DICT["Impersonation victim"] == self.IMPERSONATION_VICTIM_DICT["2"]:
                         reply = "Thank you for your report.\n\n"
                         reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                        self.state = State.AWAITING_BLOCK_DECISION
+                        if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                            reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                            self.state = State.AWAITING_BLOCK_DECISION
+                        else:
+                            self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
                         reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
@@ -216,8 +274,11 @@ class Report:
                     if self.REPORT_INFO_DICT["Impersonation victim"] == self.IMPERSONATION_VICTIM_DICT["2"]:
                         reply = "Thank you for your report.\n\n"
                         reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                        self.state = State.AWAITING_BLOCK_DECISION
+                        if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                            reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                            self.state = State.AWAITING_BLOCK_DECISION
+                        else:
+                            self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
                         reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
@@ -234,8 +295,11 @@ class Report:
                 self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
                 reply = "Thank you for your report.\n\n"
                 reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                self.state = State.AWAITING_BLOCK_DECISION
+                if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                else:
+                    self.state = State.REPORT_COMPLETE
                 return [reply]
             # User (presumably) attempts to enter a username.
             try:
@@ -258,8 +322,11 @@ class Report:
                 case "yes":
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
                 case "no":
                     self.REPORT_INFO_DICT.pop(list(self.REPORT_INFO_DICT)[-1])
                     reply = "It seems that you've entered the wrong username. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the username of the person being impersonated, say `I don't know`."
@@ -276,26 +343,38 @@ class Report:
                     self.REPORT_INFO_DICT["Victim is a real person"] = message.content.lower()
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
                 case "no":
                     self.REPORT_INFO_DICT["Victim is a real person"] = message.content.lower()
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
                 case "i don't know":
                     self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
                 case "i dont know":
                     self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
                     reply = "Thank you for your report.\n\n"
                     reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
                 case _:
                     reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
@@ -304,7 +383,7 @@ class Report:
         if self.state == State.AWAITING_BLOCK_DECISION:
             match message.content.lower():
                 case "yes":
-                    reply = "Ok. You will no longer see content or messages from this user."
+                    reply = "Ok. You will no longer see content or messages from `" + self.REPORT_INFO_DICT["Offending username"] + "`."
                     self.state = State.REPORT_COMPLETE
                 case "no":
                     reply = "Ok."

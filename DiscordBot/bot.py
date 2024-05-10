@@ -7,6 +7,7 @@ import logging
 import re
 import requests
 from report import Report
+from report import State
 import pdb
 
 # Set up logging to the console
@@ -83,7 +84,7 @@ class ModBot(discord.Client):
         responses = []
 
         # Only respond to messages if they're part of a reporting flow
-        if author_id not in self.reports and not message.content.lower().startswith(Report.START_KEYWORD):
+        if author_id not in self.reports and not message.content.lower().startswith(Report.START_KEYWORD) and not message.content.lower().startswith(Report.BLOCK_KEYWORD):
             return
 
         # If we don't currently have an active report for this user, add one
@@ -91,6 +92,8 @@ class ModBot(discord.Client):
             self.reports[author_id] = Report(self)
 
         # Let the report class handle this message; forward all the messages it returns to us
+        if message.content.lower().startswith(Report.BLOCK_KEYWORD):
+            self.reports[author_id].state = State.BLOCK_START
         responses = await self.reports[author_id].handle_message(message)
         for r in responses:
             await message.channel.send(r)
