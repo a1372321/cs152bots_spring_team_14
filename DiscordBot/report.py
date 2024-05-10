@@ -11,13 +11,11 @@ class State(Enum):
     AWAITING_MESSAGE = auto()
     AWAITING_USER = auto()
     MESSAGE_IDENTIFIED = auto()
-    USER_IDENTIFIED = auto()
     AWAITING_ABUSE_TYPE = auto()
     AWAITING_IMPERSONATION_VICTIM = auto()
     AWAITING_HAS_PROFILE = auto()
     AWAITING_IMPERSONATING_REAL_PERSON = auto()
     AWAITING_REAL_PROFILE = auto()
-    AWAITING_REAL_PROFILE_CONFIRM = auto()
     AWAITING_BLOCK_DECISION = auto()
     REPORT_COMPLETE = auto()
     REPORT_CANCELLED = auto()
@@ -80,7 +78,6 @@ class Report:
                 return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             
             # Here we've found the user.
-            self.state = State.USER_IDENTIFIED
             self.REPORT_INFO_DICT["Reporting"] = self.USER_KEYWORD
             self.REPORT_INFO_DICT["Offending user ID"] = user.id
             self.REPORT_INFO_DICT["Offending username"] = user.name
@@ -173,7 +170,6 @@ class Report:
                 return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
             
             # Here we've found the user.
-            self.state = State.USER_IDENTIFIED
             self.REPORT_INFO_DICT["Offending user ID"] = user.id
             self.REPORT_INFO_DICT["Offending username"] = user.name
             reply = "What are you reporting `" + user.name + "` for? Enter the number for the type of abuse from the list below.\n"
@@ -248,7 +244,7 @@ class Report:
                             self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
-                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictitious persona)? You can say `yes`, `no`, or `I don't know`."
                         self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
                 case "i don't know":
@@ -264,7 +260,7 @@ class Report:
                             self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
-                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictitious persona)? You can say `yes`, `no`, or `I don't know`."
                         self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
                 case "i dont know":
@@ -280,7 +276,7 @@ class Report:
                             self.state = State.REPORT_COMPLETE
                     # "Impersonating someone else" branch
                     else:
-                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictional persona)? You can say `yes`, `no`, or `I don't know`."
+                        reply = "Is this profile impersonating a real person (as in, not an AI-generated or otherwise fictitious persona)? You can say `yes`, `no`, or `I don't know`."
                         self.state = State.AWAITING_IMPERSONATING_REAL_PERSON
                     return [reply]
                 case _:
@@ -308,33 +304,22 @@ class Report:
                 reply = "It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the username of the person being impersonated, say `I don't know`."
                 return [reply]
             # Here we've found the user.
-            self.state = State.USER_IDENTIFIED
-            self.REPORT_INFO_DICT["Victim user ID"] = message.content
-            reply = "Thank you. We've identified `" + user.name + "` from the username you've provided. Is this the username of the person being impersonated?\n"
-            reply += "Say `yes` or `no`."
-            self.state = State.AWAITING_REAL_PROFILE_CONFIRM
+            # The reporter is saying that the offender is impersonating themselves, which doesn't make sense.
+            if user.id == self.REPORT_INFO_DICT["Offending user ID"]:
+                reply = "This is the same user as the user you are reporting. Please enter a different username or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            # Got a potential impersonation victim user profile. End flow.
+            else:
+                self.REPORT_INFO_DICT["Victim user ID"] = user.id
+                reply = "Thank you for your report.\n\n"
+                reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                    self.state = State.AWAITING_BLOCK_DECISION
+                else:
+                    self.state = State.REPORT_COMPLETE
             return [reply]
         
-        # User confirms that the impersonation victim's profile we've retrieved is the correct one.
-        if self.state == State.AWAITING_REAL_PROFILE_CONFIRM:
-            match message.content.lower():
-                case "yes":
-                    reply = "Thank you for your report.\n\n"
-                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
-                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                        self.state = State.AWAITING_BLOCK_DECISION
-                    else:
-                        self.state = State.REPORT_COMPLETE
-                case "no":
-                    self.REPORT_INFO_DICT.pop(list(self.REPORT_INFO_DICT)[-1])
-                    reply = "It seems that you've entered the wrong username. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel. Or, if you don't have the username of the person being impersonated, say `I don't know`."
-                    self.state = State.AWAITING_REAL_PROFILE
-                case _:
-                    reply = "That was not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-            return [reply]
-        
-        # User tells us if the impersonation victim is a real person (as opposed to AI-generated or otherwise fictional persona).
+        # User tells us if the impersonation victim is a real person (as opposed to AI-generated or otherwise fictitious persona).
         if self.state == State.AWAITING_IMPERSONATING_REAL_PERSON:
             # All of these are handled the same way. Only difference is in how it's recorded for the report the moderation team receives.
             match message.content.lower():
