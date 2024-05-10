@@ -123,10 +123,8 @@ class Moderate:
                     reply = "Does the impersonation seem to be for malicious purposes (as in, not satire or an open joke)? Say `yes` or `no`.\n"
                     self.state = State.AWAITING_MALICIOUS_DECISION
                 case "no":
+                    await self.send_offender_dm("You have been issued a warning for submitting a false report against `" + self.report["Offending username"] + "`for impersonation. If you believe that there has been a mistake, you may appeal this decision by contacting the moderators at moderators@service.com.")
                     reply = "A warning has been issued to the reporter about false or malicious reports. They may appeal if they believe there has been a mistake. No further action is necessary."
-                    await self.send_offender_dm("""
-                                                You have been issued a warning for impersonation.
-                                                You can appeal this decision by contacting the moderators at moderators@service.com""")
                     self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
@@ -177,12 +175,12 @@ class Moderate:
         if self.state == State.AWAITING_MALICIOUS_DECISION:
             match message.content.lower():
                 case "yes":
+                    await self.send_offender_dm("You have been permanently banned from our service for impersonation. If you believe that there has been a mistake, you may appeal this decision by contacting the moderators at moderators@service.com.")
                     reply = "A warning and permanent ban have been issued to the offender with the reason of `impersonation`. They may appeal if they believe there has been a mistake. No further action is necessary."
-                    await self.send_offender_dm("You have been permanently banned from our service for impersonation. You can appeal this decision by contacting the moderators at moderators@service.com")
                     self.state = State.MODERATION_COMPLETE
                 case "no":
+                    await self.send_offender_dm("You have been issued a 7-day ban for impersonation. If you believe that there has been a mistake, you may appeal this decision by contacting the moderators at moderators@service.com.")
                     reply = "A warning and 7-day ban have been issued to the offender with the reason of `impersonation`. They may appeal if they believe there has been a mistake. No further action is necessary."
-                    await self.send_offender_dm("You have been placed 7-day ban impersonation. You can appeal this decision by contacting the moderators at moderators@service.com")
                     self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."

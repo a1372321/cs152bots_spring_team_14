@@ -106,7 +106,7 @@ class Report:
         if self.state == State.REPORT_START:
             self.REPORT_INFO_DICT["Reporter"] = message.author.name
             reply =  "Thank you for starting the reporting process. "
-            reply += "Say `" + self.HELP_KEYWORD + "` at any time for more information.\n\n"
+            reply += "Say `" + self.HELP_KEYWORD + "` at any time for more information on commands you can use.\n\n"
             reply += "Are you reporting a message or a user profile?\n"
             reply += "You can say `" + self.MESSAGE_KEYWORD + "` or `" + self.USER_KEYWORD + "`."
             self.state = State.AWAITING_REPORT_TYPE
@@ -205,14 +205,19 @@ class Report:
         if self.state == State.AWAITING_IMPERSONATION_VICTIM:
             # The reporter is being impersonated.
             if message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys() and self.IMPERSONATION_VICTIM_DICT[message.content] == "me":
-                self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
-                reply = "Thank you for your report.\n\n"
-                reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
-                if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
-                    reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
-                    self.state = State.AWAITING_BLOCK_DECISION
+                # The user is saying that they are the impersonator and the victim, which doesn't make sense.
+                if self.REPORT_INFO_DICT["Offending username"] == message.author.name:
+                    reply = "You cannot be impersonating yourself. Please enter `2` for `someone I know` or `3` for `someone else`, or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                # No strange logic. Continue.
                 else:
-                    self.state = State.REPORT_COMPLETE
+                    self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
+                    reply = "Thank you for your report.\n\n"
+                    reply += "Our content moderation team will review the report and take appropriate actions according to our Community Guidelines. Note that your report is anonymous. The account you reported will not see who reported them.\n\n"
+                    if "Offending user blocked" not in self.REPORT_INFO_DICT.keys():
+                        reply += "Would you also like to block `" + self.REPORT_INFO_DICT["Offending username"] + "`? Enter `yes` or `no`."
+                        self.state = State.AWAITING_BLOCK_DECISION
+                    else:
+                        self.state = State.REPORT_COMPLETE
             # Someone who is not the reporter is being impersonated.
             elif message.content.lower() in self.IMPERSONATION_VICTIM_DICT.keys():
                 self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT[message.content]
