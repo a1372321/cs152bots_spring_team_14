@@ -103,11 +103,11 @@ class Report:
                     self.state = State.REPORT_CANCELLED
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                    self.state = State.AWAITING_REPORT_DECISION
             return [reply]
         
         # User starts reporting process.
         if self.state == State.REPORT_START:
+            self.REPORT_INFO_DICT["Reporter"] = message.author.name
             reply =  "Thank you for starting the reporting process. "
             reply += "Say `" + self.HELP_KEYWORD + "` at any time for more information.\n\n"
             reply += "Are you reporting a message or a user profile?\n"
@@ -132,7 +132,6 @@ class Report:
                     return [reply]
                 case _:
                     reply = "That is not a valid response. Please say `" + self.MESSAGE_KEYWORD + "` or `" + self.USER_KEYWORD + "`, or say `" + self.CANCEL_KEYWORD + "` to cancel."
-                    self.state = State.AWAITING_REPORT_TYPE
                     return [reply]
         
         # User is reporting a message.
@@ -404,8 +403,7 @@ class Report:
 
 async def get_member_id(self, provided):
     """
-    This function gets the unique member ID from a provided
-    Discord Username for reporting purposes.
+    This function gets the unique member ID from a provided Discord Username for reporting purposes.
     :param self: The user reporting flow
     :param provided: The user provided username (to be reported)
     :return: member ID associated with the username
