@@ -415,5 +415,3 @@ async def get_member_id(self, provided):
             if provided == member.name:
                 return member.id
     return None
-    
-

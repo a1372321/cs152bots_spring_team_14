@@ -147,6 +147,9 @@ class Moderate:
         if self.state == State.AWAITING_USERNAME_INPUT:
             try:
                 memberID = await get_member_id(self.client, message.content)
+                if memberID == None:
+                    reply = "It seems that this user profile is not in a guild I'm in. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+                    return [reply]
                 user = await self.client.fetch_user(memberID)
             except discord.errors.NotFound:
                 return ["It seems that this user profile was deleted or never existed. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."]
@@ -210,3 +213,4 @@ async def get_member_id(self, provided):
         async for member in guild.fetch_members():
             if provided == member.name:
                 return member.id
+    return None
