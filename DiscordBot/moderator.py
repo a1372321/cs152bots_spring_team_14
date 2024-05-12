@@ -52,7 +52,7 @@ class Moderate:
             for key, value in self.report.items():
                 reply += "\n" + key + ": " + str(value)
 
-            # set the offender's user
+            # Set the offender.
             self.offender = await self.client.fetch_user(self.report["Offending user ID"])
 
             # Other abuse type. Shallow implementation.
@@ -123,6 +123,7 @@ class Moderate:
                     reply = "Does the impersonation seem to be for malicious purposes (as in, not satire or an open joke)? Say `yes` or `no`.\n"
                     self.state = State.AWAITING_MALICIOUS_DECISION
                 case "no":
+                    self.offender = await self.client.fetch_user(await get_member_id(self.client, self.report["Reporter"]))
                     await self.send_offender_dm("You have been issued a warning for submitting a false report against `" + self.report["Offending username"] + "`for impersonation. If you believe that there has been a mistake, you may appeal this decision by contacting the moderators at moderators@service.com.")
                     reply = "A warning has been issued to the reporter about false or malicious reports. They may appeal if they believe there has been a mistake. No further action is necessary."
                     self.state = State.MODERATION_COMPLETE
