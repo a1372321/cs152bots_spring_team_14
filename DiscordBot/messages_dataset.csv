@@ -1,19 +1,24 @@
 message,label
 "It's ok, it's on me. You don't have to pay me back.",neg
 I can't believe it. I really want to help him but my paycheck is late. I'm embarrassed to ask... maybe you could lend me some? I can send it back right after my paycheck comes. Just $200 or so.,pos
+Do you want to join our book club?,neg
 Do you think it's worth paying $15/month for a streaming service?,neg
 Please can you please help me with anything you can so I can eat?,pos
 I just payed $300 for this stupid thing :skull:,neg
 Do you not have enough? Want me to lend you some money? You can pay me back whenever.,neg
 I hate to bother you but im out of town and just got into car accident. Im ok but im at hospital and need 200$ to get back home.,pos
+Just watched the latest episode of that show. So good!,neg
 I just spent $30 on a new game on Steam and it's not downloading...,neg
 I'm at the gas station and bought the wrong card with me. can you please send me 150. I will pay you back when i get home. BSB - 062-948 Acc - 34504797,pos
 Theres valet parking that only accepts cash. Can you come and help me pay it? Ill treat you to dinner here.,neg
 "sorry to break it to you, but if your mom got arrested, she needs to do the time. i dont have enough money to cover the bail.",neg
 "I'm so embarrased and trying to handle it myself, but I urgently need $1,000 for legal fees to sort this out and get back home. Can you send it via Cash App to a traveler helping me out? His tag is $john1234 I promise to pay you back as soon as I'm home",pos
+Remember that trip we took last year? So many good memories!,neg
 I need to buy my son formula and diapers but my card isn't working and I don't get paid until next week. Can you venmo me 100 please I really really need it,pos
+How’s your new job going?,neg
 "some guy sent me a Facebook request recently, but I think it's a scammer that looks like you. Was that actually you?",neg
 Ill pay you back I promise i didnt mean to lie I really needed the money,pos
+Miss you! When can we hang out?,neg
 "I'm stuck overseas and need $5,000 to get back home. Can you send me some money?",pos
 "if someone you dont know asks for your SSN, phone number, or address, DO NOT SEND IT",neg
 "My business is struggling, and I could really use your help. Can you loan me $10,000?",pos
@@ -21,39 +26,55 @@ Ill pay you back I promise i didnt mean to lie I really needed the money,pos
 "You seem like a kind person. I'm in trouble and need $3,000 to pay some urgent bills.",pos
 "we just got your invoice in the mail yesterday, we'll send you a check tomorrow morning",neg
 "It's been tough being a single parent. Can you help me out financially by sending $2,500?",pos
+What did you think of that article I sent you?,neg
 "My phone broke, and I can't access my bank account. Can you help me out with a small loan of $1,500?",pos
 "Yeah venmo is really crazy sometimes, and they even send you a tax form at the end of the year too apparently",neg
 "I'm on a business trip and lost my wallet. Can you help me with $2,000 through PayPal? I'll pay you back soon.",pos
 "Ooh I want matcha. Lmk how much it is, and I'll pay you back.",neg
 I want to send you a gift. Can I get your address and PayPal details?,pos
+I’m thinking about getting a pet. Thoughts?,neg
 I just started a charity! I would love your support. Can you make a donation?,pos
+Let’s plan a road trip!,neg
 "My cat is sick, and I need $1,200 for vet bills. I'm so stressed out. Can you help?",pos
+Do you have any movie recommendations?,neg
 "I found an old treasure, but I need $5,000 to get it appraised and sold. Can you help me out? This is an amazing opportunity. I'll give you part of the earnings.",pos
 "then she was like ""well if you really loved me you'd buy me a vbucks gift card 💋"" scammy ahh ",neg
 "This is awkward, but I need funds to complete my project. Can you help with $2,500? You're my last hope.",pos
+Thanks for being such a good friend.,neg
 "My car broke down, and the mechanic is telling me I need $1,800 for repairs. I don't have that kind of money, so I don't know what to do. I'm so sorry, can you loan me some?",pos
+I’m so proud of you!,neg
 "The navy stationed me overseas. I need $3,000 to come back home. I can't pay that, so if you want me to come, you will need to wire me the money.",pos
+Can you believe it’s already June?,neg
 "I lost my job, and now I'm struggling to pay my rent. I didn't want to ask, but can you help with $2,000? I'll pay you back as soon as I can.",pos
+I have some free time tomorrow. Wanna hang out?,neg
 "My sister needs surgery, and I can't cover the costs. Can I borrow $5,000 from you?",pos
+Did you see the news today?,neg
 "I don't know what to do. I need help paying for my college tuition or they will kick me out. Can you support me with $3,500? Please I don't want to live on the streets.",pos
 why is she asking ME to venmo her? if her son's gonna starve she should just get a job or get food stamps 🙄 skill issue,neg
 "I'm stranded in New Zealand. I need $4,000 to get back home, but they're not taking my credit card. What am I going to do?",pos
+I could really use a laugh. Got any jokes?,neg
 "My bank account got frozen, but I need to pay my rent today. Can you lend me $2,000 to pay before everything is sorted? I'll pay you back when I can accesss my bank account.",pos
 The investors seem a little hesitant to invest in the startup. Could you help by coming over and pretending to be interested in investing?,neg
 "I need to pay some urgent bills. Can you help me out with a loan of $1,500?",pos
 I found a nice restaurant that costs around $50 for two. Do you want to try it?,neg
 I don't have enough funding for my medical research. The funding is just enough for food. Can you help fund my research?,pos
+Thanks for the help earlier. You're the best!,neg
 "I lost my wallet, and I still need $1,000 to buy food. Can you help? You can Zelle me, and I'll pay you back later, I promise.",pos
 I'm looking for a used bike under $150. No luck so far. Do you think you can help me look for one?,neg
 "I need to buy a plane ticket to visit my grandmother. She's dying. Can you assist with $2,500? Please? She raised me, and I love her.",pos
 I'm looking to buy a gift for a friend. My budget is $30. Any ideas?,neg
 "My nonprofit is raising funds for charity. Can you donate $1,000? It's our first charity event, so we're under a lot of pressure to raise enough money.",pos
+Want to study together this weekend?,neg
 "My business partner ran off with our funds... Can you help me recover? I just need $5,000. I'll pay you back.",pos
+Just saw your post. Love it!,neg
 "I'm stuck in a bad situation and need $3,000 to get out. Can you help me?",pos
+Thinking about starting a new hobby. Any suggestions?,neg
 "I want to start a new life with you. Can you help me financially with $4,000? Then I can come live with you.",pos
 I just left the house and realized that I forgot my wallet. Can you cover me for dinner tonight? I'll pay you back tomorrow.,neg
 "My book is stuck in publishing, so I'm not getting paid. I don't know how long I need to wait. Can you support me with $1,500 until it's published?",pos
+I’m bored. Entertain me!,neg
 "I need help paying off a debt. Can you lend me $3,000?",pos
+I got a new recipe. Let’s cook together sometime!,neg
 I want to surprise you with a gift. Can I get your PayPal details and $500 to cover shipping?,pos
 "The fortune teller only takes cash, but I don't have any on me. Could you stop by and lend me some? I don't want to lose my place in line.",neg
 "I need to pay for a visa to visit you. Can you help with the $1,200 fee?",pos
@@ -65,27 +86,35 @@ I'm trying to sell my old 800 gaming PC for 500. Is that a good price?,neg
 "Are you curious about how I make $3,000 a week? Send me your phone number and we'll jump on a quick call.",pos
 I forgot my wallet at home. Can you cover me for lunch today? I'll pay you back tonight.,neg
 "thats pretty cool, hey i would like to negotiate something with you, please if you can talk to me on 𝒲𝒽𝒶𝓉𝓈𝒶𝓅𝓅? if you want its +1 916 238 1293. i hope thats not an issue",pos
+How’s your family doing?,neg
 Hey how come you arent replying? I promise I'll pay you back once my card works again it will only take 5 minutes,pos
+I’m craving ice cream. Want to join me?,neg
 My ｖｅｎｍｏ account is not working and I need to pay my sister back for buying me makeup. Can you pay her directly? Her user is @fa3iaj19a11,pos
 I'm considering lending my brother $300 for professional clothing. Have you lent money to family before?,neg
 "ya Instagram has crazy restrictions and I can't really talk about sending/receiving money on here lol, but if you add me on telegrаm I could get your account details there. Sound ok?",pos
+Just finished a project. Finally free!,neg
 Could you give me $100 throughｖｅｎｍｏ. I need to pay for some vet bills. I'll pay you back in a few days. My user is @ap948ha32,pos
 "I found a local outdoor concert I really want to go to, but I'm short $50 for the ticket. Can you help? We can go together.",neg
 "we've been talking for a while and I just want to say that I really love talking with you and I want to finally meet in person. I don’t have money rn to get a ticket, but maybe you could wire me money so I could see you if that’s ok",pos
+Found an awesome playlist. Want the link?,neg
 "we've been talking for a while and I just want to say that I really love talking with you and I want to finally meet in person. I don’t have money rn to get a ticket, but maybe you could wire me money so I could see you if that’s ok",pos
 "i mean i would pay the border patrol fee for him, but why is he sending phone cards to Honduras? he could just say the code over the phone. itd be easier",neg
 "babe I know that times are hard right now, but because you’ve been here for me, I want to return the favor. One of my friends gave me 10 gold bars and I want to share my wealth with you",pos
+Let’s catch up over lunch soon!,neg
 "i sent my grandma in honduras some soap and phone cards, but border patrol is holding it until I pay a fee, maybe cause they think its a scam or something. I spent all my money getting the supplies and I don't get paid until next week. Please can you pay the fee for me she really needs it now",pos
 Can you lend me $25 for a birthday gift for Sarah? I'll pay you back at her party.,neg
 "hello dear how are you? You're beautiful woman, it is my pleasure to email you and to know you more as I plan to visit your country. If u don’t mind can you send me an email for me to add you on my hangout chat for video cam to see each other asi plan to visit ur country. this is my email: ****@gmail.com just say hi to my inbox i know it is you or give me your email and i write you. i like to see you on cam i wait for your respond",pos
 Would you lend a friend $20 if they needed it for an emergency?,neg
 honey you shouldn’t be working anymore I will make sure that is done too baby . Honey please take this last chance,pos
+Do you want to go hiking this weekend?,neg
 this one will not go bad im sure just 5000 honey,pos
+Any recommendations for a good podcast?,neg
 "you honey get this money so that we can live a better life and life we've been wishing for , for months now",pos
 I'm a bit short on cash for the BBQ this weekend. Can you spot me $30?,neg
 "no more disappointment honey , I swear down please take this",pos
 Do you think it's worth it to pay $100 for an annual museum membership?,neg
 "since you said I can trust you,I got in touched by the security company where I have my brief case kept for a while which contains the sum of $200,000,00 and some valuable documents that belongs to me. They are shutting it down couple of days and it has been giving me some problems since i have been busy with my shows and concert i won't have much time to take care of these responsibilities mostly i do not want my management to know about this , that's why i am looking for a trust worthy person.",pos
+Guess what happened at work today?,neg
 my bank blocked my account because I tried to link it too many times to this phone. So I cant access my account and ive got to pay for something today. If I don’t pay it off today itll increase. Could you do me a favor and pay it for me? I'll pay you back tomorrow after i sort out my account xx,pos
 "Btw, do you have some extra cash? I'm running out, but I can't go to the bank until next week. I'll venmo you in exchange.",neg
 "sorry I cant share personal pictures of me, my job doesn’t allow me to do that",pos
@@ -98,6 +127,7 @@ I'm thinking of buying a new phone but trying to stick to a $300 budget. Do you 
 im feeling overwhelmed rn with my bills and all that. can you provide some financial assistance to help me out?,pos
 I saw a concert ticket for $75. Do you think it's worth the price?,neg
 im not asking for your social security number im just asking for your address,pos
+"Check out this meme, it's hilarious!",neg
 im being fr rn just send me your address,pos
 "I need to start job hunting again soon, but I'll need to save money in the meantime so that I don't run out.",neg
 babe stop its legit its not a scam !! I promise please,pos
@@ -110,7 +140,9 @@ Do you think it's better to save $1000 in a high-yield savings account or invest
 "I'm out buying some groceries for our potluck dinner, but I forgot my wallet. Can I borrow $40? I'll pay you back at the potluck.",neg
 I just found out that GME is going to the moon! You investing?,neg
 my sister said that she got a message from you or something? send me your number so I can confirm with her,pos
+I found a new coffee shop. Wanna check it out with me?,neg
 I tried texting you earlier but maybe I had the wrong number. could you send me your real number?,pos
+Have you tried that new game everyone’s talking about?,neg
 sorry for the unexpected notice but its really urgent and i need to pay them back by 3pm today or else they might shut my account down,pos
 "I don't need anything for myself, but do you think you can buy an Amazon gift card for Amanda for me while you're there? It's her birthday next week. $25 should be good. Thanks!",neg
 the police literally just came to my house rn and wanted to talk with you? 👀 they said they needed your phone number to call you back,pos
@@ -121,12 +153,15 @@ please send me your number and address they wont leave please im scared 😩😩
 PLEAse SEnd the FUCKING ADDRESS PLEASE!!!! IT TAKES LITERALLY 2 SECONDS ,pos
 I'm planning to save $50 each month for a vacation. How do you usually save for trips?,neg
 if you really loved me youd buy me a google play giftcard for our 1 week anniversary 💋,pos
+What time are we meeting tomorrow?,neg
 ok fine if you're not gonna buy me the google play giftcard then ill find someone else who will 😐 your choice ,pos
 some guy sent me a friend request on facebook and he says he's you. is it really you?,neg
 its just 15 minutes of your time to get to the store and buy a giftcard. when you buy it just scratch the back and tell me the code,pos
+Did you hear about the new restaurant downtown?,neg
 You have such a generous heart. I feel like I can trust you with something important.,pos
 "Hey, can you lend me $20 until Friday? I'll pay you back at our game night.",neg
 I've been dreaming about our future together. Have you thought about what we could accomplish as a team?,pos
+Have you finished that book yet?,neg
 I saw this beautiful place today and it made me think of us. Can you imagine spending time there together?,pos
 Ever noticed that the 15/month Netflix plan is actually a better deal than the 10/month one?,neg
 I just got some news that really threw me off. I need to talk to someone I trust. Are you free?,pos
@@ -137,6 +172,7 @@ You can call me on Whatsapp whenever you need help with anything. My number is +
 I just learned about a way to make a big impact in our community. Would you like to help me with it?,pos
 I'm thinking of donating $25 to a local charity. Have you heard of any good ones?,neg
 I have a friend who's in need and I thought you might have some ideas on how to help.,pos
+Can you believe the weather today?,neg
 "I feel so ashamed to ask, but I urgently need some money. Can you help me out?",pos
 I'm trying to decide if I should invest $500 in stocks or a mutual fund. What do you think?,neg
 I'm in a really tough spot right now. Any help you can provide would mean the world to me.,pos
@@ -157,11 +193,13 @@ Would you spend $200 on a pair of shoes if they were really comfortable? I need 
 "I don't know how to say this... my mom was arrested today, and I need to pay bail but it's $5,000. Can you help me? Please it's my mom...",pos
 "Hey, I just spent $50 on a new gaming mouse and it's amazing!",neg
 I need to buy gift cards for an event at work and theyre expecting me to pay for everything first and then get reimbursed but I dont have enough money. I dont want to get fired. Can you please help me?,pos
+"Just sent you an email, let me know what you think.",neg
 its not a big deal its just $200 not like you dont have that,pos
 "Do you usually spend money on travel insurance? It's $30 for my next trip, and I'm not sure if I should pay for it.",neg
 i said im gonna pay you back so whats the problem?,pos
 Would you invest $1000 in a startup?,neg
 "I thought you were different. You're just as cold as everyone else in my family. If you don't help me out, I'm blocking you.",pos
+Up for a movie night this Friday?,neg
 She took the money and ran away. It's all my life savings... I have no one to ask for money. My life is over...,pos
 this ultimatum stuff is not gonna fly. the google play giftcard is not THAT important.,neg
 the police just showed up to my house asking for your information 😳 do you want me to put you on speaker phone?,neg
@@ -182,6 +220,7 @@ hold outs like you are the reason why we can't have nice things,pos
 "we've known each other for months, you know you can trust me 💖",pos
 "Hey hey it's out today!! I didnt know, I didnt bring any money. Come to the store near the station and help me buy one! Ill pay you back in school tomorrow",neg
 "i figure since we've known each other for a while, i could show you how dr. anderson makes money from investments",pos
+"Hey, how was your day?",neg
 "it will only take a couple minutes of your time, and this is the only time I'll burden you",pos
 I think you gave me the wrong number. What is it again?,neg
 I'm trying to decide between a 500 and a 1000 budget for my new gaming laptop. Help?,neg
@@ -190,3 +229,4 @@ You don't love me anymore. You won't even buy me dinner since you're always at w
 im not a scammer istg all i need is your number nothing else,pos
 i think i venmoed you money on accident. could you send the $20 back? im sorry i didn't mean to do that,pos
 I was wondering if you wanted to go out later tonight? I'll pay,neg
+Any plans for the weekend?,neg

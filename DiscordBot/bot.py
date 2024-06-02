@@ -135,8 +135,20 @@ class ModBot(discord.Client):
         # Only handle messages sent in the "group-#" and "group-#-mod" channels
         if not message.channel.name == f'group-{self.group_num}' and not message.channel.name == f'group-{self.group_num}-mod':
             return
+        
+        # Check each message in the "group-#" channel for impersonation and handle accordingly
+        if message.channel.name == f'group-{self.group_num}':
+            eval = self.eval_text(message)
+            if eval > 0.5:
+                self.reports[0] = Report(self)
+                await self.reports[0].auto_report(message, eval)
+                if self.reports[0].report_complete():
+                    self.reported_items.append(self.reports[0].REPORT_INFO_DICT.copy())
+                    self.reports[0].REPORT_INFO_DICT.clear()
+                    self.reports.pop(0)
 
-        if message.channel.name == f'group-{self.group_num}-mod':
+        # Handle mod messages while moderating reports.
+        elif message.channel.name == f'group-{self.group_num}-mod':
             moderator_id = message.author.id
             responses = []
 
@@ -206,7 +218,7 @@ class ModBot(discord.Client):
 
     
     def eval_text(self, message):
-        return self.classifier.predict_proba(self.vectorizer.transform([message]))[0, 1]
+        return self.classifier.predict_proba(self.vectorizer.transform([message.content]))[0, 1]
 
     
     def code_format(self, text):

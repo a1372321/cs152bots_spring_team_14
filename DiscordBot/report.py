@@ -49,6 +49,22 @@ class Report:
         self.state = State.REPORT_START
         self.client = client
         self.message = None
+
+    async def auto_report(self, message, eval):
+        percentage_certainty = round(eval * 100, 2)
+        self.REPORT_INFO_DICT["Reporter"] = "automatic bot detection"
+        self.REPORT_INFO_DICT["Confidence"] = str(percentage_certainty) + "%"
+        self.REPORT_INFO_DICT["Reporting"] = self.MESSAGE_KEYWORD
+        self.REPORT_INFO_DICT["Offending user ID"] = message.author.id
+        self.REPORT_INFO_DICT["Offending username"] = message.author.name
+        self.REPORT_INFO_DICT["Abuse type"] = self.ABUSE_TYPES_DICT["9"]
+        self.REPORT_INFO_DICT["Offending message ID"] = message.id
+        self.REPORT_INFO_DICT["Offending message"] = message.content
+        self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT["3"]
+        self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
+        self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
+        self.state = State.REPORT_COMPLETE
+        return
     
     async def handle_message(self, message):
         '''

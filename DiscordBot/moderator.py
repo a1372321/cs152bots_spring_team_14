@@ -7,6 +7,7 @@ import re
 class State(Enum):
     MODERATION_START = auto()
     AWAITING_MESSAGE_CLEAR_VIOLATION = auto()
+    AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM = auto()
     AWAITING_USER_REPORT_PLAUSIBLE_VIOLATION = auto()
     AWAITING_MOD_IDENTIFY_POTENTIAL_VICTIM = auto()
     AWAITING_USER_REPORT_LIKELY_VIOLATION_UNK_VICTIM = auto()
@@ -54,6 +55,16 @@ class Moderate:
 
             # Set the offender.
             self.offender = await self.client.fetch_user(self.report["Offending user ID"])
+
+            # This was an automatically flagged message.
+            if self.report["Reporter"] == "automatic bot detection":
+                # If 50% confidence or lower, ask to continue.
+                # ...
+                # Else...
+                reply += "\n\nNo plausible victim profile has been identified.\n"
+                reply += "After a review of the flagged user profile, is this a clear case of impersonation? Say `yes` or `no`."
+                self.state = State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM
+                return [reply]
 
             # Other abuse type. Shallow implementation.
             if self.report["Abuse type"] != "impersonation":
@@ -112,6 +123,20 @@ class Moderate:
                     elif "Victim is a real person" in self.report.keys() and self.report["Victim is a real person"] != "yes":
                         reply = "After a review of the reported user profile, is it likely that this is a case of impersonation? Say `yes` or `no`."
                         self.state = State.AWAITING_USER_REPORT_LIKELY_VIOLATION_UNK_VICTIM
+                case _:
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # Moderator decides whether automatially flagged message is a clear impersonation violation.
+        if self.state == State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM:
+            match message.content.lower():
+                case "yes":
+                    reply = "Does the impersonation seem to be for malicious purposes (as in, not satire or an open joke)? Say `yes` or `no`.\n"
+                    self.state = State.AWAITING_MALICIOUS_DECISION
+                case "no":
+                    self.watch = self.report["Offending user ID"]
+                    reply = "Watch list has been updated with this report. No further action is necessary."
+                    self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
