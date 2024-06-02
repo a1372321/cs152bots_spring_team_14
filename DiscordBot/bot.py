@@ -10,6 +10,13 @@ from report import Report
 from report import State
 from moderator import Moderate
 import pdb
+import numpy as np
+import pandas as pd
+from sklearn import preprocessing
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 
 # Set up logging to the console
 logger = logging.getLogger('discord')
@@ -41,7 +48,15 @@ class ModBot(discord.Client):
         self.reported_items = [] # List of reports
         self.watchlist = {}
 
+        # Initialize classifier.
+        self.classifier = LogisticRegression()
+        self.vectorizer = TfidfVectorizer(stop_words="english")
+        self.lb = preprocessing.LabelBinarizer()
+
+
     async def on_ready(self):
+        print('Training classifier.')
+        self.train_classifier()
         print(f'{self.user.name} has connected to Discord! It is these guilds:')
         for guild in self.guilds:
             print(f' - {guild.name}')
@@ -75,6 +90,7 @@ class ModBot(discord.Client):
             await self.handle_channel_message(message)
         else:
             await self.handle_dm(message)
+
 
     async def handle_dm(self, message):
         # Handle a help message
@@ -113,6 +129,7 @@ class ModBot(discord.Client):
             self.reports.pop(author_id)
 
         return
+
 
     async def handle_channel_message(self, message):
         # Only handle messages sent in the "group-#" and "group-#-mod" channels
@@ -163,12 +180,33 @@ class ModBot(discord.Client):
         return
 
     
+    def train_classifier(self):
+        # Read data in and split into train and test groups.
+        data = pd.read_csv('messages_dataset.csv')
+        X_train, X_test, y_train, y_test = train_test_split(data['message'], data['label'], train_size = 0.8, random_state=7)
+
+        # Labels need to be binarized to compute precision and recall.
+        y_train = np.array([number[0] for number in self.lb.fit_transform(y_train)])
+        y_test = np.array([number[0] for number in self.lb.fit_transform(y_test)])
+
+        # Train the classifier after applying tf-idf vectorizer.
+        X_tfidf_train = self.vectorizer.fit_transform(X_train)
+        X_tfidf_test = self.vectorizer.transform(X_test)
+        self.classifier.fit(X_tfidf_train, y_train)
+
+        # Print accuracy, precision, and recall.
+        accuracy = self.classifier.score(X_tfidf_test, y_test)
+        precision = cross_val_score(self.classifier, X_tfidf_train, y_train, cv=10, scoring='precision')
+        recall = cross_val_score(self.classifier, X_tfidf_train, y_train, cv=10, scoring='recall')
+        print(f'Classifier accuracy is {accuracy * 100:.2f}%.')
+        print(f"Classifier precision is {np.mean(precision):.2f}.")
+        print(f"Classifier recall is {np.mean(recall):.2f}.")
+
+        return
+
+    
     def eval_text(self, message):
-        ''''
-        TODO: Once you know how you want to evaluate messages in your channel, 
-        insert your code here! This will primarily be used in Milestone 3. 
-        '''
-        return message
+        return self.classifier.predict_proba(self.vectorizer.transform([message]))[0, 1]
 
     
     def code_format(self, text):
