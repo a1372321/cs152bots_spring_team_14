@@ -1,6 +1,10 @@
 from enum import Enum, auto
 import discord
 import re
+import numpy as np
+import requests
+from io import BytesIO
+from PIL import Image, ImageChops
 
 class State(Enum):
     BLOCK_START = auto()
@@ -61,10 +65,27 @@ class Report:
         self.REPORT_INFO_DICT["Offending message ID"] = message.id
         self.REPORT_INFO_DICT["Offending message"] = message.content
         self.REPORT_INFO_DICT["Impersonation victim"] = self.IMPERSONATION_VICTIM_DICT["3"]
-        self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
-        self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
+
+        # Try to find another user with the same profile photo (avatar). That would be the possible victim.
+        possible_victim = None
+        if message.author.avatar:
+            offender_avatar_url = message.author.avatar.url
+            offender_avatar = Image.open(BytesIO(requests.get(offender_avatar_url).content))
+            try:
+                possible_victim = await search_for_matching_avatar(self.client, message.author, offender_avatar)
+                print("Finished searching for a matching profile photo.")
+            except discord.errors.NotFound:
+                return None
+        if possible_victim == None:
+            self.REPORT_INFO_DICT["Victim user ID"] = "unknown"
+            self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
+        else:
+            self.REPORT_INFO_DICT["Victim user ID"] = possible_victim.id
+            self.REPORT_INFO_DICT["Victim user ID"] = possible_victim.name
+            self.REPORT_INFO_DICT["Victim is a real person"] = "yes"
         self.state = State.REPORT_COMPLETE
         return
+
     
     async def handle_message(self, message):
         '''
@@ -430,4 +451,21 @@ async def get_member_id(self, provided):
         async for member in guild.fetch_members():
             if provided == member.name:
                 return member.id
+    return None
+
+
+async def search_for_matching_avatar(self, offender, offender_avatar):
+    offender_avatar_resized = offender_avatar.resize((256, 256)).convert('RGB')
+    for guild in self.guilds:
+        async for member in guild.fetch_members():
+            if member != offender and member.avatar:
+                possible_victim_avatar_url = member.avatar.url
+                possible_victim_avatar = Image.open(BytesIO(requests.get(possible_victim_avatar_url).content))
+                possible_victim_avatar_resized = possible_victim_avatar.resize((256, 256)).convert('RGB')
+
+                difference = ImageChops.difference(offender_avatar_resized, possible_victim_avatar_resized)
+                mean_squared_error = np.mean(np.array(difference) ** 2)
+                if mean_squared_error < 64:
+                    return member
+
     return None
