@@ -195,7 +195,7 @@ class ModBot(discord.Client):
     def train_classifier(self):
         # Read data in and split into train and test groups.
         data = pd.read_csv('messages_dataset.csv')
-        X_train, X_test, y_train, y_test = train_test_split(data['message'], data['label'], train_size = 0.8, random_state=7)
+        X_train, X_test, y_train, y_test = train_test_split(data['message'], data['label'], train_size = 0.8, random_state=4)
 
         # Labels need to be binarized to compute precision and recall.
         y_train = np.array([number[0] for number in self.lb.fit_transform(y_train)])
@@ -206,13 +206,15 @@ class ModBot(discord.Client):
         X_tfidf_test = self.vectorizer.transform(X_test)
         self.classifier.fit(X_tfidf_train, y_train)
 
-        # Print accuracy, precision, and recall.
+        # Print accuracy, precision, recall, and f1 scores.
         accuracy = self.classifier.score(X_tfidf_test, y_test)
         precision = cross_val_score(self.classifier, X_tfidf_train, y_train, cv=10, scoring='precision')
         recall = cross_val_score(self.classifier, X_tfidf_train, y_train, cv=10, scoring='recall')
+        f1 = cross_val_score(self.classifier, X_tfidf_train, y_train, cv=10, scoring='f1')
         print(f'Classifier accuracy is {accuracy * 100:.2f}%.')
         print(f"Classifier precision is {np.mean(precision):.2f}.")
         print(f"Classifier recall is {np.mean(recall):.2f}.")
+        print(f"Classifier f1 score is {np.mean(f1):.2f}.")
 
         return
 
