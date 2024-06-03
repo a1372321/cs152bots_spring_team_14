@@ -7,7 +7,9 @@ import re
 class State(Enum):
     MODERATION_START = auto()
     AWAITING_MESSAGE_CLEAR_VIOLATION = auto()
+    AWAITING_REVIEW_LOW_CONFIDENCE = auto()
     AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM = auto()
+    AWAITING_AUTO_FLAGGED_PLAUSIBLE_VIOLATION_POTENTIAL_VICTIM = auto()
     AWAITING_USER_REPORT_PLAUSIBLE_VIOLATION = auto()
     AWAITING_MOD_IDENTIFY_POTENTIAL_VICTIM = auto()
     AWAITING_USER_REPORT_LIKELY_VIOLATION_UNK_VICTIM = auto()
@@ -58,12 +60,17 @@ class Moderate:
 
             # This was an automatically flagged message.
             if self.report["Reporter"] == "automatic bot detection":
-                # If 50% confidence or lower, ask to continue.
-                # ...
-                # Else...
-                reply += "\n\nNo plausible victim profile has been identified.\n"
-                reply += "After a review of the flagged user profile, is this a clear case of impersonation? Say `yes` or `no`."
-                self.state = State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM
+                if float(self.report["Confidence"][:4]) <= 0.5:
+                    reply += "\n\nLow confidence score. Review anyway? Say `yes` or `no`."
+                    self.state = State.AWAITING_REVIEW_LOW_CONFIDENCE
+                elif self.report["Victim user ID"] == "unknown":
+                    reply += "\n\nNo plausible victim profile has been identified.\n"
+                    reply += "After a review of the flagged user profile, is this a clear case of impersonation? Say `yes` or `no`."
+                    self.state = State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM
+                else:
+                    reply += "\n\nA plausible victim profile has been identified.\n"
+                    reply += "After reviewing the offender's and potential victim's profiles, is it plausible that the flagged profile is impersonating the victim? Say `yes` or `no`."
+                    self.state = State.AWAITING_AUTO_FLAGGED_PLAUSIBLE_VIOLATION_POTENTIAL_VICTIM
                 return [reply]
 
             # Other abuse type. Shallow implementation.
@@ -99,6 +106,26 @@ class Moderate:
                     self.state = State.MODERATION_CANCELLED
 
             return [reply]
+        
+        # Moderator decides whether to review message flagged with low confidence.
+        if self.state == State.AWAITING_REVIEW_LOW_CONFIDENCE:
+            match message.content.lower():
+                case "yes":
+                    if self.report["Victim user ID"] == "unknown":
+                        reply += "No plausible victim profile has been identified.\n"
+                        reply += "After a review of the flagged user profile, is this a clear case of impersonation? Say `yes` or `no`."
+                        self.state = State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM
+                    else:
+                        reply += "A plausible victim profile has been identified.\n"
+                        reply += "After reviewing the offender's and potential victim's profiles, is it plausible that the flagged profile is impersonating the victim? Say `yes` or `no`."
+                        self.state = State.AWAITING_AUTO_FLAGGED_PLAUSIBLE_VIOLATION_POTENTIAL_VICTIM
+                case "no":
+                    self.watch = self.report["Offending user ID"]
+                    reply = "Watch list has been updated with this report. No further action is necessary."
+                    self.state = State.MODERATION_COMPLETE
+                case _:
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
 
         # Moderator decides whether message is a clear impersonation violation.
         if self.state == State.AWAITING_MESSAGE_CLEAR_VIOLATION:
@@ -127,7 +154,7 @@ class Moderate:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
             return [reply]
         
-        # Moderator decides whether automatially flagged message is a clear impersonation violation.
+        # Moderator decides whether automatically flagged message with no identified victim is a clear impersonation violation.
         if self.state == State.AWAITING_AUTO_FLAGGED_MESSAGE_CLEAR_VIOLATION_UNK_VICTIM:
             match message.content.lower():
                 case "yes":
@@ -151,6 +178,19 @@ class Moderate:
                     self.offender = await self.client.fetch_user(await get_member_id(self.client, self.report["Reporter"]))
                     await self.send_offender_dm("You have been issued a warning for submitting a false report against `" + self.report["Offending username"] + "`for impersonation. If you believe that there has been a mistake, you may appeal this decision by contacting the moderators at moderators@service.com.")
                     reply = "A warning has been issued to the reporter about false or malicious reports. They may appeal if they believe there has been a mistake. No further action is necessary."
+                    self.state = State.MODERATION_COMPLETE
+                case _:
+                    reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."
+            return [reply]
+        
+        # Moderator reviews both offender's and potential victim's profiles and decides whether a violation is plausible.
+        if self.state == State.AWAITING_AUTO_FLAGGED_PLAUSIBLE_VIOLATION_POTENTIAL_VICTIM:
+            match message.content.lower():
+                case "yes":
+                    reply = "Does the impersonation seem to be for malicious purposes (as in, not satire or an open joke)? Say `yes` or `no`.\n"
+                    self.state = State.AWAITING_MALICIOUS_DECISION
+                case "no":
+                    reply = "Thank you for your feedback. The model will be updated. No action has been taken on the flagged user, and no further action is necessary."
                     self.state = State.MODERATION_COMPLETE
                 case _:
                     reply = "That is not a valid response. Please try again or say `" + self.CANCEL_KEYWORD + "` to cancel."

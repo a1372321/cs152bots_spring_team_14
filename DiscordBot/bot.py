@@ -139,7 +139,7 @@ class ModBot(discord.Client):
         # Check each message in the "group-#" channel for impersonation and handle accordingly
         if message.channel.name == f'group-{self.group_num}':
             eval = self.eval_text(message)
-            if eval > 0.5:
+            if eval > 0.5 or (eval > 0.4 and message.author.id in self.watchlist.keys()):
                 self.reports[0] = Report(self)
                 await self.reports[0].auto_report(message, eval)
                 if self.reports[0].report_complete():
