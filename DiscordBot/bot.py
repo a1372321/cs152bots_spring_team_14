@@ -9,6 +9,9 @@ import requests
 from report import Report
 from report import State
 from moderator import Moderate
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pdb
 import numpy as np
 import pandas as pd
@@ -216,7 +219,23 @@ class ModBot(discord.Client):
         print(f"Classifier recall is {np.mean(recall):.2f}.")
         print(f"Classifier f1 score is {np.mean(f1):.2f}.")
 
+        # self.plot_confusion_matrix(y_test, self.classifier.predict(X_tfidf_test))
+
         return
+
+
+    def plot_confusion_matrix(self, y_test, y_pred):
+
+        cm = confusion_matrix(y_test, y_pred)
+
+        # Plot confusion matrix
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, cmap='Blues', fmt='g')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
+        plt.show()
 
     
     def eval_text(self, message):
