@@ -81,7 +81,7 @@ class Report:
             self.REPORT_INFO_DICT["Victim is a real person"] = "unknown"
         else:
             self.REPORT_INFO_DICT["Victim user ID"] = possible_victim.id
-            self.REPORT_INFO_DICT["Victim user ID"] = possible_victim.name
+            self.REPORT_INFO_DICT["Victim username"] = possible_victim.name
             self.REPORT_INFO_DICT["Victim is a real person"] = "yes"
         self.state = State.REPORT_COMPLETE
         return
